@@ -1,0 +1,43 @@
+{
+  "name": "Simple AI-ready GitHub Issues (no login needed)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b1000000-0000-4000-8000-000000000001",
+      "name": "Click to Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { number: 101, title: 'Login page crashes on wrong password', body: 'When I enter a wrong password the app shows a blank screen.', url: 'https://github.com/demo/app/issues/101' } },\n  { json: { number: 102, title: 'Add dark mode to dashboard', body: 'Users want a dark theme option so the dashboard is easier to read at night.', url: 'https://github.com/demo/app/issues/102' } },\n  { json: { number: 103, title: 'Typo in README installation section', body: 'The installation section has a spelling mistake in step 2.', url: 'https://github.com/demo/app/issues/103' } }\n];"
+      },
+      "id": "b1000000-0000-4000-8000-000000000002",
+      "name": "Sample GitHub Issues",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const i = item.json;\n  const text = (i.title + ' ' + i.body).toLowerCase();\n\n  let priority = 'low';\n  if (/crash|error|security|fail|broken/.test(text)) priority = 'high';\n  else if (/slow|bug|wrong/.test(text)) priority = 'medium';\n\n  let type = 'task';\n  if (/crash|error|bug|fail|broken|wrong/.test(text)) type = 'bug';\n  else if (/typo|readme|docs|documentation/.test(text)) type = 'documentation';\n  else if (/add|support|feature|improve/.test(text)) type = 'feature';\n\n  const criteria = [\n    'Problem is understood and reproduced',\n    'Fix or change is implemented',\n    'Tests or a manual check pass',\n    'Issue is updated with the result'\n  ];\n\n  const aiReadyTask = [\n    '### AI-ready task',\n    '**Title:** ' + i.title,\n    '**Type:** ' + type,\n    '**Priority:** ' + priority,\n    '**Description:** ' + i.body,\n    '**Acceptance criteria:**',\n    criteria.map((c) => '- [ ] ' + c).join('\\n')\n  ].join('\\n');\n\n  const telegramMessage = '🆕 Issue #' + i.number + '\\n' + i.title + '\\nType: ' + type + ' | Priority: ' + priority + '\\n🔗 ' + i.url;\n\n  return { json: { number: i.number, title: i.title, type: type, priority: priority, aiReadyTask: aiReadyTask, telegramMessage: telegramMessage } };\n});"
+      },
+      "id": "b1000000-0000-4000-8000-000000000003",
+      "name": "Make AI-ready Task + Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    }
+  ],
+  "connections": {
+    "Click to Run": {
+      "main": [[{ "node": "Sample GitHub Issues", "type": "main", "index": 0 }]]
+    },
+    "Sample GitHub Issues": {
+      "main": [[{ "node": "Make AI-ready Task + Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
